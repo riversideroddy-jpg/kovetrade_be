@@ -268,15 +268,13 @@ WHITENOISE_AUTOREFRESH = DEBUG
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
-    "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8001",
     "http://127.0.0.1:3001",
+    "http://103.217.253.70",
     "https://kovetrade.vercel.app",
     "https://kovetrade.com",
     "https://www.kovetrade.com",
-    "https://kovetrade-backend.vercel.app",
-    "https://kovetrade.vercel.app",
     "https://kovetrade-backend.vercel.app",
 ]
 
@@ -343,19 +341,17 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
     'http://localhost:8000',
     'http://localhost:8001',
     'http://127.0.0.1:8000',
     'http://127.0.0.1:8001',
+    'http://103.217.253.70',
     'https://kovetrade.vercel.app',
     'https://kovetrade.com',
     "https://www.kovetrade.com",
     'https://kovetrade-backend.vercel.app',
-    "https://kovetrade.vercel.app",
-    "https://kovetrade-backend.vercel.app",
 ]
 
 X_FRAME_OPTIONS = 'DENY'
