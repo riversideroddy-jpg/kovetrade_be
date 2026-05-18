@@ -422,9 +422,11 @@ class Trader(models.Model):
     risk = models.PositiveSmallIntegerField(
         help_text="Risk score should be from 1 to 10."
     )
-    capital = models.CharField(
-        max_length=50, 
-        help_text="Enter the amount in dollars e.g. 2000, 4000"
+    profit_share = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=50.00,
+        help_text="Profit share percentage (e.g. 50.00 means 50%)"
     )
     copiers = models.PositiveIntegerField(
         help_text="This should range from 1 to 300 or even more."
@@ -521,11 +523,6 @@ class Trader(models.Model):
     followers = models.PositiveIntegerField(
         default=0,
         help_text="Number of followers"
-    )
-    trading_days = models.CharField(
-        max_length=50,
-        default="0",
-        help_text="Trading days experience, e.g. '500+', '1200'"
     )
     trend_direction = models.CharField(
         max_length=10,

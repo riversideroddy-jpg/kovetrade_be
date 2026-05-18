@@ -35,7 +35,7 @@
         </div>
         <div class="space-y-2.5 text-sm">
             <div class="flex justify-between"><span class="text-gray-500">Gain</span><span class="font-semibold text-emerald-600">{{ trader.gain|floatformat:0 }}%</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Capital</span><span>${{ trader.capital|floatformat:2|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Profit Share</span><span>{{ trader.profit_share|floatformat:2 }}%</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Risk</span><span>{{ trader.risk }}/10</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Win Rate</span><span>{{ trader.win_rate|floatformat:1 }}%</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Copiers</span><span>{{ trader.copiers }}</span></div>
