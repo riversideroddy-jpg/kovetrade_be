@@ -106,13 +106,13 @@
 
             <!-- Capital & Gain -->
             <h4 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-chart-line text-emerald-500"></i>Capital & Gain
+                <i class="fas fa-chart-line text-emerald-500"></i>Profit Share & Gain
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.capital.label }}</label>
-                    {{ form.capital }}
-                    {% if form.capital.errors %}<p class="text-xs text-red-600 mt-1">{{ form.capital.errors.0 }}</p>{% endif %}
+                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.profit_share.label }}</label>
+                    {{ form.profit_share }}
+                    {% if form.profit_share.errors %}<p class="text-xs text-red-600 mt-1">{{ form.profit_share.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.gain.label }}</label>
@@ -238,11 +238,6 @@
                     <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.min_account_threshold.label }}</label>
                     {{ form.min_account_threshold }}
                     {% if form.min_account_threshold.errors %}<p class="text-xs text-red-600 mt-1">{{ form.min_account_threshold.errors.0 }}</p>{% endif %}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.trading_days.label }}</label>
-                    {{ form.trading_days }}
-                    {% if form.trading_days.errors %}<p class="text-xs text-red-600 mt-1">{{ form.trading_days.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.total_trades_12m.label }}</label>
