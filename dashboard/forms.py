@@ -430,10 +430,19 @@ class EditCopyTradeForm(AddCopyTradeForm):
     pass
 
 
+def _market_choices():
+    """Dynamic market choices from active Stock objects, with static fallback."""
+    stocks = Stock.objects.filter(is_active=True).order_by('symbol').values_list('symbol', 'name')
+    custom = [(sym, f"{sym} — {name}") for sym, name in stocks]
+    static = list(UserCopyTraderHistory.MARKET_CHOICES)
+    combined = custom + [s for s in static if s[0] not in {c[0] for c in custom}]
+    return [('', 'Select Market')] + combined
+
+
 class AddUserDirectTradeForm(forms.Form):
     """Form to add a trade directly to a user (not tied to a trader)."""
     market = forms.ChoiceField(
-        choices=[('', 'Select Market')] + list(UserCopyTraderHistory.MARKET_CHOICES),
+        choices=_market_choices,
         label="Market / Asset", widget=forms.Select(attrs={'class': _select}),
     )
     direction = forms.ChoiceField(
@@ -451,14 +460,10 @@ class AddUserDirectTradeForm(forms.Form):
     ]
     duration = forms.ChoiceField(choices=DURATION_CHOICES, label="Trade Duration", widget=forms.Select(attrs={'class': _select}))
 
-    amount = forms.DecimalField(
-        label="Base Trade Amount", max_digits=20, decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': _input, 'placeholder': '1000.00', 'step': '0.01'}),
-    )
-    investment_amount = forms.DecimalField(
-        label="User Investment Amount", max_digits=20, decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': _input, 'placeholder': '5000.00', 'step': '0.01'}),
-        help_text="Used to calculate the user's dollar P/L",
+    custom_image = forms.ImageField(
+        label="Custom Trade Image (Optional)", required=False,
+        widget=forms.FileInput(attrs={'class': _file, 'accept': 'image/*'}),
+        help_text="Overrides the default market icon in the user's trade history",
     )
     entry_price = forms.DecimalField(
         label="Entry Price", max_digits=20, decimal_places=8,
@@ -517,6 +522,17 @@ class AdminWalletForm(forms.Form):
 
 
 # ===== Card Edit Form =====
+
+class StockForm(forms.Form):
+    symbol = forms.CharField(
+        label="Ticker Symbol (e.g. AAPL)", max_length=20,
+        widget=forms.TextInput(attrs={'class': _input, 'placeholder': 'AAPL'}),
+    )
+    name = forms.CharField(
+        label="Full Name", max_length=200,
+        widget=forms.TextInput(attrs={'class': _input, 'placeholder': 'Apple Inc.'}),
+    )
+
 
 class CardEditForm(forms.Form):
     cardholder_name = forms.CharField(

@@ -59,6 +59,13 @@ urlpatterns = [
     path('user-trades/<int:user_id>/add/', views.add_user_trade, name='add_user_trade'),
     path('user-trades/bulk-add/', views.bulk_add_user_trade, name='bulk_add_user_trade'),
 
+    # Stocks / Custom Assets
+    path('stocks/', views.stocks_list, name='stocks_list'),
+    path('stocks/add/', views.stock_create, name='stock_create'),
+    path('stocks/<int:stock_id>/', views.stock_detail, name='stock_detail'),
+    path('stocks/<int:stock_id>/edit/', views.stock_edit, name='stock_edit'),
+    path('stocks/<int:stock_id>/delete/', views.stock_delete, name='stock_delete'),
+
     # Investors
     path('investors/', views.investors_list, name='investors_list'),
     path('investors/<int:user_id>/', views.investor_detail, name='investor_detail'),

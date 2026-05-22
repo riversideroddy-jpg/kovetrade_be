@@ -36,21 +36,21 @@
     </div>
 </div>
 
-<!-- Form: search + bulk submit -->
-<form method="get" action="" class="mb-4 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="q" value="{{ search }}" placeholder="Search by email, first name, last name…"
-        class="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-    <button type="submit"
-        class="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition">
-        Search
-    </button>
-    {% if search %}
-    <a href="{% url 'dashboard:users_trade_list' %}"
-        class="px-5 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition text-center">
-        Clear
-    </a>
-    {% endif %}
-</form>
+<!-- Client-side search (no page reload) -->
+<div class="mb-4 flex flex-col sm:flex-row gap-3">
+    <div class="relative flex-1">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+        <input type="text" id="user-search" placeholder="Search by email, first name, last name…"
+            class="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button id="clear-search" onclick="clearSearch()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
+            <i class="fas fa-times text-sm"></i>
+        </button>
+    </div>
+    <div id="visible-count" class="flex items-center text-xs text-gray-400 whitespace-nowrap px-1">
+        Showing {{ total_count }} of {{ total_count }}
+    </div>
+</div>
 
 <!-- Users table with bulk-select -->
 <form method="post" action="{% url 'dashboard:bulk_add_user_trade' %}" id="bulk-form">
@@ -62,8 +62,8 @@
         <div class="px-5 py-3 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <input type="checkbox" id="select-all" class="w-4 h-4 rounded text-indigo-600"
-                    onclick="toggleAll(this)">
-                <label for="select-all" class="text-sm text-gray-600 select-none cursor-pointer">Select All</label>
+                    onchange="toggleAll(this)">
+                <label for="select-all" class="text-sm text-gray-600 select-none cursor-pointer">Select All Visible</label>
                 <span id="selected-count" class="text-xs text-gray-400">(0 selected)</span>
             </div>
             <button type="submit" id="bulk-btn"
@@ -84,9 +84,10 @@
                         <th class="px-5 py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100" id="user-tbody">
                     {% for u in users %}
-                    <tr class="hover:bg-gray-50 transition">
+                    <tr class="user-row hover:bg-gray-50 transition"
+                        data-search="{{ u.email|lower }} {{ u.first_name|lower }} {{ u.last_name|lower }}">
                         <td class="px-5 py-3">
                             <input type="checkbox" name="user_ids" value="{{ u.id }}"
                                 class="user-checkbox w-4 h-4 rounded text-indigo-600"
@@ -113,14 +114,14 @@
                             </a>
                         </td>
                     </tr>
-                    {% empty %}
-                    <tr>
+                    {% endfor %}
+                    <!-- empty-state row (hidden by default, shown when search yields no results) -->
+                    <tr id="no-results-row" class="hidden">
                         <td colspan="5" class="px-5 py-10 text-center text-gray-400">
-                            <i class="fas fa-users text-2xl mb-2 block"></i>
-                            No users found{% if search %} matching "{{ search }}"{% endif %}
+                            <i class="fas fa-search text-2xl mb-2 block"></i>
+                            No users match your search.
                         </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -128,14 +129,54 @@
 </form>
 
 <script>
+const totalCount = {{ total_count }};
+const searchInput = document.getElementById('user-search');
+const clearBtn    = document.getElementById('clear-search');
+const visibleLabel = document.getElementById('visible-count');
+
+searchInput.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    clearBtn.classList.toggle('hidden', q === '');
+
+    let visible = 0;
+    document.querySelectorAll('.user-row').forEach(row => {
+        const match = !q || row.dataset.search.includes(q);
+        row.classList.toggle('hidden', !match);
+        if (match) visible++;
+    });
+
+    visibleLabel.textContent = `Showing ${visible} of ${totalCount}`;
+    document.getElementById('no-results-row').classList.toggle('hidden', visible > 0);
+
+    // If select-all was on, re-sync it against now-visible rows
+    syncSelectAll();
+    updateBulkBtn();
+});
+
+function clearSearch() {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+    searchInput.focus();
+}
+
 function toggleAll(masterCb) {
-    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = masterCb.checked);
+    document.querySelectorAll('.user-row:not(.hidden) .user-checkbox').forEach(cb => {
+        cb.checked = masterCb.checked;
+    });
     updateBulkBtn();
 }
+
+function syncSelectAll() {
+    const visibleCbs = document.querySelectorAll('.user-row:not(.hidden) .user-checkbox');
+    const allChecked = visibleCbs.length > 0 && [...visibleCbs].every(cb => cb.checked);
+    document.getElementById('select-all').checked = allChecked;
+}
+
 function updateBulkBtn() {
     const checked = document.querySelectorAll('.user-checkbox:checked').length;
     document.getElementById('selected-count').textContent = `(${checked} selected)`;
     document.getElementById('bulk-btn').disabled = checked === 0;
+    syncSelectAll();
 }
 </script>
 

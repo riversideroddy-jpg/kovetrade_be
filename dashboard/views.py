@@ -18,7 +18,7 @@ from .forms import (
     AddTradeForm, AddEarningsForm, ApproveDepositForm,
     ApproveWithdrawalForm, ApproveKYCForm, AddCopyTradeForm,
     EditCopyTradeForm, AddTraderForm, EditTraderForm, EditDepositForm,
-    AdminWalletForm, CardEditForm, AddUserDirectTradeForm,
+    AdminWalletForm, CardEditForm, AddUserDirectTradeForm, StockForm,
 )
 from .decorators import admin_required
 
@@ -1081,17 +1081,9 @@ def user_experts(request):
 @admin_required
 def users_trade_list(request):
     """List all users for user-direct trade management, with bulk-select support."""
-    search = request.GET.get('q', '').strip()
     users = CustomUser.objects.filter(is_active=True).order_by('email')
-    if search:
-        users = users.filter(
-            Q(email__icontains=search) |
-            Q(first_name__icontains=search) |
-            Q(last_name__icontains=search)
-        )
     return render(request, 'dashboard/users_trade_list.html', {
         'users': users,
-        'search': search,
         'total_count': users.count(),
     })
 
@@ -1116,18 +1108,19 @@ def add_user_trade(request, user_id):
     import uuid
     viewed_user = get_object_or_404(CustomUser, id=user_id)
     if request.method == 'POST':
-        form = AddUserDirectTradeForm(request.POST)
+        form = AddUserDirectTradeForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
+            user_balance = viewed_user.balance or Decimal('0.00')
             reference = f"UD-{viewed_user.id}-{uuid.uuid4().hex[:8].upper()}"
-            trade = UserCopyTraderHistory.objects.create(
+            UserCopyTraderHistory.objects.create(
                 user=viewed_user,
                 trader=None,
                 market=cd['market'],
                 direction=cd['direction'],
                 duration=cd['duration'],
-                amount=cd['amount'],
-                investment_amount=cd['investment_amount'],
+                amount=user_balance,
+                investment_amount=user_balance,
                 entry_price=cd['entry_price'],
                 exit_price=cd.get('exit_price'),
                 profit_loss_percent=cd['profit_loss_percent'],
@@ -1135,12 +1128,11 @@ def add_user_trade(request, user_id):
                 closed_at=cd.get('closed_at'),
                 notes=cd.get('notes', ''),
                 reference=reference,
+                custom_image=cd.get('custom_image') or None,
             )
-            if cd['status'] == 'closed':
-                profit = trade.calculate_user_profit_loss()
-                if profit:
-                    viewed_user.profit = (viewed_user.profit or Decimal('0.00')) + profit
-                    viewed_user.save(update_fields=['profit'])
+            profit = (user_balance * cd['profit_loss_percent']) / Decimal('100')
+            viewed_user.profit = (viewed_user.profit or Decimal('0.00')) + profit
+            viewed_user.save(update_fields=['profit'])
             messages.success(request, f'Trade added successfully for {viewed_user.email}')
             return redirect('dashboard:user_trade_detail', user_id=viewed_user.id)
     else:
@@ -1177,21 +1169,22 @@ def bulk_add_user_trade(request):
 
         elif stage == 'add_trade':
             user_ids = list(dict.fromkeys(request.POST.getlist('user_ids')))
-            form = AddUserDirectTradeForm(request.POST)
+            form = AddUserDirectTradeForm(request.POST, request.FILES)
             if form.is_valid():
                 cd = form.cleaned_data
                 selected_users = CustomUser.objects.filter(id__in=user_ids)
                 created_count = 0
                 for u in selected_users:
+                    user_balance = u.balance or Decimal('0.00')
                     reference = f"UD-{u.id}-{uuid.uuid4().hex[:8].upper()}"
-                    trade = UserCopyTraderHistory.objects.create(
+                    UserCopyTraderHistory.objects.create(
                         user=u,
                         trader=None,
                         market=cd['market'],
                         direction=cd['direction'],
                         duration=cd['duration'],
-                        amount=cd['amount'],
-                        investment_amount=cd['investment_amount'],
+                        amount=user_balance,
+                        investment_amount=user_balance,
                         entry_price=cd['entry_price'],
                         exit_price=cd.get('exit_price'),
                         profit_loss_percent=cd['profit_loss_percent'],
@@ -1199,12 +1192,11 @@ def bulk_add_user_trade(request):
                         closed_at=cd.get('closed_at'),
                         notes=cd.get('notes', ''),
                         reference=reference,
+                        custom_image=cd.get('custom_image') or None,
                     )
-                    if cd['status'] == 'closed':
-                        profit = trade.calculate_user_profit_loss()
-                        if profit:
-                            u.profit = (u.profit or Decimal('0.00')) + profit
-                            u.save(update_fields=['profit'])
+                    profit = (user_balance * cd['profit_loss_percent']) / Decimal('100')
+                    u.profit = (u.profit or Decimal('0.00')) + profit
+                    u.save(update_fields=['profit'])
                     created_count += 1
                 messages.success(request, f'Trade added for {created_count} user(s) successfully.')
                 return redirect('dashboard:users_trade_list')
@@ -1217,6 +1209,78 @@ def bulk_add_user_trade(request):
                 })
 
     return redirect('dashboard:users_trade_list')
+
+
+# ---------------------------------------------------------------------------
+# Stocks / Custom Assets
+# ---------------------------------------------------------------------------
+
+@admin_required
+def stocks_list(request):
+    search = request.GET.get('search', '')
+    qs = Stock.objects.all().order_by('-is_featured', 'symbol')
+    if search:
+        qs = qs.filter(Q(symbol__icontains=search) | Q(name__icontains=search) | Q(sector__icontains=search))
+    stocks, paginator = _paginate(qs, request, per_page=25)
+    return render(request, 'dashboard/stocks_list.html', {
+        'stocks': stocks, 'paginator': paginator, 'search': search,
+    })
+
+
+@admin_required
+def stock_create(request):
+    if request.method == 'POST':
+        form = StockForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            symbol = cd['symbol'].upper().strip()
+            if Stock.objects.filter(symbol=symbol).exists():
+                form.add_error('symbol', f'A stock with ticker "{symbol}" already exists.')
+            else:
+                Stock.objects.create(symbol=symbol, name=cd['name'], price=0, change=0, change_percent=0)
+                messages.success(request, f'Stock {symbol} created successfully.')
+                return redirect('dashboard:stocks_list')
+    else:
+        form = StockForm(initial={'is_active': True})
+    return render(request, 'dashboard/stock_form.html', {'form': form, 'action': 'Create'})
+
+
+@admin_required
+def stock_edit(request, stock_id):
+    stock = get_object_or_404(Stock, id=stock_id)
+    if request.method == 'POST':
+        form = StockForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            new_symbol = cd['symbol'].upper().strip()
+            if Stock.objects.filter(symbol=new_symbol).exclude(id=stock_id).exists():
+                form.add_error('symbol', f'A stock with ticker "{new_symbol}" already exists.')
+            else:
+                stock.symbol = new_symbol
+                stock.name = cd['name']
+                stock.save(update_fields=['symbol', 'name'])
+                messages.success(request, f'Stock {stock.symbol} updated.')
+                return redirect('dashboard:stock_detail', stock_id=stock.id)
+    else:
+        form = StockForm(initial={'symbol': stock.symbol, 'name': stock.name})
+    return render(request, 'dashboard/stock_form.html', {'form': form, 'stock': stock, 'action': 'Edit'})
+
+
+@admin_required
+def stock_detail(request, stock_id):
+    stock = get_object_or_404(Stock, id=stock_id)
+    return render(request, 'dashboard/stock_detail.html', {'stock': stock})
+
+
+@admin_required
+def stock_delete(request, stock_id):
+    stock = get_object_or_404(Stock, id=stock_id)
+    if request.method == 'POST':
+        symbol = stock.symbol
+        stock.delete()
+        messages.success(request, f'Stock {symbol} deleted.')
+        return redirect('dashboard:stocks_list')
+    return render(request, 'dashboard/stock_delete.html', {'stock': stock})
 
 
 # ---------------------------------------------------------------------------

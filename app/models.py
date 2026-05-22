@@ -781,7 +781,14 @@ class UserCopyTraderHistory(models.Model):
         null=True,
         help_text="Additional notes about the trade"
     )
-    
+    custom_image = CloudinaryField(
+        "custom_image",
+        folder="trade_images",
+        blank=True,
+        null=True,
+        help_text="Custom image for this trade (shown instead of the default market icon)",
+    )
+
     class Meta:
         verbose_name = "Trader Trade History"
         verbose_name_plural = "Trader Trade Histories"
@@ -810,7 +817,13 @@ class UserCopyTraderHistory(models.Model):
     
     @property
     def market_logo_url(self):
-        """Get logo URL for the market"""
+        """Get logo URL for the market — custom_image takes priority over the static mapping."""
+        try:
+            if self.custom_image:
+                return self.custom_image.url
+        except Exception:
+            pass
+
         # Map market symbols to logo URLs
         logo_mapping = {
             # Stocks
