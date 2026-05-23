@@ -1080,8 +1080,12 @@ def user_experts(request):
 
 @admin_required
 def users_trade_list(request):
-    """List all users for user-direct trade management, with bulk-select support."""
-    users = CustomUser.objects.filter(is_active=True).order_by('email')
+    """List only users who have at least one completed deposit."""
+    users = CustomUser.objects.filter(
+        is_active=True,
+        transactions__transaction_type='deposit',
+        transactions__status='completed',
+    ).distinct().order_by('email')
     return render(request, 'dashboard/users_trade_list.html', {
         'users': users,
         'total_count': users.count(),
