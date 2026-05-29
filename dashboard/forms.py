@@ -532,6 +532,11 @@ class StockForm(forms.Form):
         label="Full Name", max_length=200,
         widget=forms.TextInput(attrs={'class': _input, 'placeholder': 'Apple Inc.'}),
     )
+    image = forms.ImageField(
+        label="Stock Logo / Image",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': _input, 'accept': 'image/*'}),
+    )
 
 
 class CardEditForm(forms.Form):

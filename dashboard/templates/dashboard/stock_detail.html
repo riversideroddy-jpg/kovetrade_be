@@ -6,6 +6,13 @@
 <div class="max-w-2xl">
     <div class="bg-white rounded-xl border border-gray-200/60 p-6 mb-4">
         <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center gap-4">
+                {% if stock.image %}
+                <img src="{{ stock.image.url }}" alt="{{ stock.symbol }}"
+                    class="w-16 h-16 rounded-full object-cover border border-gray-100 flex-shrink-0">
+                {% else %}
+                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xl font-bold flex-shrink-0">{{ stock.symbol|slice:":2" }}</div>
+                {% endif %}
             <div>
                 <div class="flex items-center gap-3 mb-1">
                     <span class="font-mono text-2xl font-bold text-indigo-700">{{ stock.symbol }}</span>
@@ -22,6 +29,7 @@
                 {% if stock.sector %}
                 <p class="text-xs text-gray-400 mt-0.5">{{ stock.sector }}</p>
                 {% endif %}
+            </div>
             </div>
             <div class="flex gap-2">
                 <a href="{% url 'dashboard:stock_edit' stock.id %}"

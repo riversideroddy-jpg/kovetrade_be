@@ -33,7 +33,15 @@
             {% for stock in stocks %}
             <tr class="hover:bg-gray-50">
                 <td class="px-5 py-3">
-                    <span class="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">{{ stock.symbol }}</span>
+                    <div class="flex items-center gap-3">
+                        {% if stock.image %}
+                        <img src="{{ stock.image.url }}" alt="{{ stock.symbol }}"
+                            class="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-100">
+                        {% else %}
+                        <div class="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xs font-bold flex-shrink-0">{{ stock.symbol|slice:":2" }}</div>
+                        {% endif %}
+                        <span class="font-mono font-semibold text-indigo-700">{{ stock.symbol }}</span>
+                    </div>
                 </td>
                 <td class="px-5 py-3 font-medium text-gray-800">{{ stock.name }}</td>
                 <td class="px-5 py-3 text-gray-500">{{ stock.sector|default:"—" }}</td>

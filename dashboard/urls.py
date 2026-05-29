@@ -46,6 +46,7 @@ urlpatterns = [
 
     # Traders
     path('traders/', views.traders_list, name='traders_list'),
+    path('traders/bulk-update-stats/', views.bulk_update_trader_stats, name='bulk_update_trader_stats'),
     path('traders/add/', views.add_trader, name='add_trader'),
     path('traders/<int:trader_id>/', views.trader_detail, name='trader_detail'),
     path('traders/<int:trader_id>/edit/', views.edit_trader, name='edit_trader'),
@@ -57,6 +58,7 @@ urlpatterns = [
     path('user-trades/', views.users_trade_list, name='users_trade_list'),
     path('user-trades/<int:user_id>/', views.user_trade_detail, name='user_trade_detail'),
     path('user-trades/<int:user_id>/add/', views.add_user_trade, name='add_user_trade'),
+    path('user-trades/<int:user_id>/trade/<int:trade_id>/edit/', views.edit_user_trade, name='edit_user_trade'),
     path('user-trades/bulk-add/', views.bulk_add_user_trade, name='bulk_add_user_trade'),
 
     # Stocks / Custom Assets

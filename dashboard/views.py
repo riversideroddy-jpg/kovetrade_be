@@ -714,22 +714,91 @@ def delete_copy_trade(request, trade_id):
 
 @admin_required
 def traders_list(request):
-    search = request.GET.get('search', '')
-    badge_filter = request.GET.get('badge', '')
-    active_filter = request.GET.get('active', '')
-    qs = Trader.objects.all().order_by('-gain', '-copiers')
-    if search:
-        qs = qs.filter(Q(name__icontains=search) | Q(username__icontains=search) | Q(country__icontains=search))
-    if badge_filter:
-        qs = qs.filter(badge=badge_filter)
-    if active_filter:
-        qs = qs.filter(is_active=(active_filter == 'active'))
-    page_obj, paginator = _paginate(qs, request, 20)
-    return render(request, 'dashboard/traders_list.html', {
-        'traders': page_obj, 'page_obj': page_obj, 'paginator': paginator,
-        'is_paginated': paginator.num_pages > 1,
-        'search': search, 'badge_filter': badge_filter, 'active_filter': active_filter,
-    })
+    traders = Trader.objects.all().order_by('-gain', '-copiers')
+    return render(request, 'dashboard/traders_list.html', {'traders': traders})
+
+
+@admin_required
+def bulk_update_trader_stats(request):
+    if request.method != 'POST':
+        return redirect('dashboard:traders_list')
+
+    trader_ids = request.POST.getlist('trader_ids')
+    if not trader_ids:
+        messages.error(request, 'No traders selected.')
+        return redirect('dashboard:traders_list')
+
+    def get_pct(key):
+        try:
+            v = Decimal(request.POST.get(key, '0') or '0')
+            return v if v > 0 else Decimal('0')
+        except Exception:
+            return Decimal('0')
+
+    gain_pct         = get_pct('gain_pct')
+    return_ytd_pct   = get_pct('return_ytd_pct')
+    return_2y_pct    = get_pct('return_2y_pct')
+    win_rate_pct     = get_pct('win_rate_pct')
+    trades_pct       = get_pct('trades_pct')
+    copiers_pct      = get_pct('copiers_pct')
+    profit_share_pct = get_pct('profit_share_pct')
+    followers_pct    = get_pct('followers_pct')
+    min_capital_pct  = get_pct('min_capital_pct')
+
+    traders = list(Trader.objects.filter(id__in=trader_ids))
+    fields_to_update = []
+
+    for trader in traders:
+        if gain_pct:
+            trader.gain = (trader.gain or Decimal('0')) * (1 + gain_pct / 100)
+        if return_ytd_pct:
+            trader.return_ytd = (trader.return_ytd or Decimal('0')) * (1 + return_ytd_pct / 100)
+        if return_2y_pct:
+            trader.return_2y = (trader.return_2y or Decimal('0')) * (1 + return_2y_pct / 100)
+        if win_rate_pct:
+            total_t = (trader.total_wins or 0) + (trader.total_losses or 0)
+            if total_t > 0:
+                current = (trader.total_wins or 0) / total_t
+                new_rate = min(current * float(1 + win_rate_pct / 100), 0.9999)
+                trader.total_wins = round(new_rate * total_t)
+                trader.total_losses = total_t - trader.total_wins
+        if trades_pct:
+            trader.trades = round((trader.trades or 0) * float(1 + trades_pct / 100))
+        if copiers_pct:
+            trader.copiers = round((trader.copiers or 0) * float(1 + copiers_pct / 100))
+        if profit_share_pct:
+            trader.profit_share = round((trader.profit_share or 0) * float(1 + profit_share_pct / 100))
+        if followers_pct:
+            trader.followers = round((trader.followers or 0) * float(1 + followers_pct / 100))
+        if min_capital_pct:
+            trader.min_account_threshold = (trader.min_account_threshold or Decimal('0')) * (1 + min_capital_pct / 100)
+
+    if gain_pct:         fields_to_update.append('gain')
+    if return_ytd_pct:   fields_to_update.append('return_ytd')
+    if return_2y_pct:    fields_to_update.append('return_2y')
+    if win_rate_pct:     fields_to_update.extend(['total_wins', 'total_losses'])
+    if trades_pct:       fields_to_update.append('trades')
+    if copiers_pct:      fields_to_update.append('copiers')
+    if profit_share_pct: fields_to_update.append('profit_share')
+    if followers_pct:    fields_to_update.append('followers')
+    if min_capital_pct:  fields_to_update.append('min_account_threshold')
+
+    if traders and fields_to_update:
+        try:
+            Trader.objects.bulk_update(traders, fields_to_update)
+        except Exception as e:
+            from django.db import connection as _conn
+            try:
+                _conn.close()
+            except Exception:
+                pass
+            messages.error(request, f'Update failed: {e}')
+            return redirect('dashboard:traders_list')
+        messages.success(request, f'Stats updated for {len(traders)} trader(s).')
+    else:
+        messages.warning(request, 'No changes applied — all percentage fields were 0%.')
+
+    return redirect('dashboard:traders_list')
 
 
 def _build_trader_data(form):
@@ -1148,6 +1217,55 @@ def add_user_trade(request, user_id):
 
 
 @admin_required
+def edit_user_trade(request, user_id, trade_id):
+    """Edit an existing direct trade for a user, adjusting profit accordingly."""
+    viewed_user = get_object_or_404(CustomUser, id=user_id)
+    trade = get_object_or_404(UserCopyTraderHistory, id=trade_id, user=viewed_user, trader__isnull=True)
+    if request.method == 'POST':
+        form = AddUserDirectTradeForm(request.POST, request.FILES)
+        if form.is_valid():
+            cd = form.cleaned_data
+            inv = trade.investment_amount or Decimal('0.00')
+            old_profit = (inv * trade.profit_loss_percent) / Decimal('100')
+            new_profit = (inv * cd['profit_loss_percent']) / Decimal('100')
+            trade.market = cd['market']
+            trade.direction = cd['direction']
+            trade.duration = cd['duration']
+            trade.entry_price = cd['entry_price']
+            trade.exit_price = cd.get('exit_price')
+            trade.profit_loss_percent = cd['profit_loss_percent']
+            trade.status = cd['status']
+            trade.closed_at = cd.get('closed_at')
+            trade.notes = cd.get('notes', '')
+            if cd.get('custom_image'):
+                trade.custom_image = cd['custom_image']
+            elif request.POST.get('clear_image'):
+                trade.custom_image = None
+            trade.save()
+            viewed_user.profit = (viewed_user.profit or Decimal('0.00')) + (new_profit - old_profit)
+            viewed_user.save(update_fields=['profit'])
+            messages.success(request, f'Trade {trade.reference} updated successfully.')
+            return redirect('dashboard:user_trade_detail', user_id=viewed_user.id)
+    else:
+        form = AddUserDirectTradeForm(initial={
+            'market': trade.market,
+            'direction': trade.direction,
+            'duration': trade.duration,
+            'entry_price': trade.entry_price,
+            'exit_price': trade.exit_price,
+            'profit_loss_percent': trade.profit_loss_percent,
+            'status': trade.status,
+            'closed_at': trade.closed_at.strftime('%Y-%m-%dT%H:%M') if trade.closed_at else None,
+            'notes': trade.notes,
+        })
+    return render(request, 'dashboard/edit_user_trade.html', {
+        'form': form,
+        'trade': trade,
+        'viewed_user': viewed_user,
+    })
+
+
+@admin_required
 def bulk_add_user_trade(request):
     """
     Add the same trade to multiple selected users at once.
@@ -1234,14 +1352,17 @@ def stocks_list(request):
 @admin_required
 def stock_create(request):
     if request.method == 'POST':
-        form = StockForm(request.POST)
+        form = StockForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
             symbol = cd['symbol'].upper().strip()
             if Stock.objects.filter(symbol=symbol).exists():
                 form.add_error('symbol', f'A stock with ticker "{symbol}" already exists.')
             else:
-                Stock.objects.create(symbol=symbol, name=cd['name'], price=0, change=0, change_percent=0)
+                stock = Stock.objects.create(symbol=symbol, name=cd['name'], price=0, change=0, change_percent=0)
+                if cd.get('image'):
+                    stock.image = cd['image']
+                    stock.save(update_fields=['image'])
                 messages.success(request, f'Stock {symbol} created successfully.')
                 return redirect('dashboard:stocks_list')
     else:
@@ -1253,7 +1374,7 @@ def stock_create(request):
 def stock_edit(request, stock_id):
     stock = get_object_or_404(Stock, id=stock_id)
     if request.method == 'POST':
-        form = StockForm(request.POST)
+        form = StockForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
             new_symbol = cd['symbol'].upper().strip()
@@ -1262,7 +1383,11 @@ def stock_edit(request, stock_id):
             else:
                 stock.symbol = new_symbol
                 stock.name = cd['name']
-                stock.save(update_fields=['symbol', 'name'])
+                update_fields = ['symbol', 'name']
+                if cd.get('image'):
+                    stock.image = cd['image']
+                    update_fields.append('image')
+                stock.save(update_fields=update_fields)
                 messages.success(request, f'Stock {stock.symbol} updated.')
                 return redirect('dashboard:stock_detail', stock_id=stock.id)
     else:

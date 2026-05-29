@@ -817,10 +817,16 @@ class UserCopyTraderHistory(models.Model):
     
     @property
     def market_logo_url(self):
-        """Get logo URL for the market — custom_image takes priority over the static mapping."""
+        """Get logo URL — custom_image first, then Stock model image, then hardcoded map."""
         try:
             if self.custom_image:
                 return self.custom_image.url
+        except Exception:
+            pass
+        try:
+            stock = Stock.objects.filter(symbol=self.market, image__isnull=False).exclude(image='').first()
+            if stock and stock.image:
+                return stock.image.url
         except Exception:
             pass
 

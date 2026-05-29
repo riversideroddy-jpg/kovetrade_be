@@ -67,6 +67,7 @@
                     <th class="px-5 py-3">P/L $</th>
                     <th class="px-5 py-3">Status</th>
                     <th class="px-5 py-3">Opened</th>
+                    <th class="px-5 py-3">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -95,6 +96,10 @@
                         </span>
                     </td>
                     <td class="px-5 py-3 text-xs text-gray-400">{{ trade.opened_at|date:"M d, Y H:i" }}</td>
+                    <td class="px-5 py-3">
+                        <a href="{% url 'dashboard:edit_user_trade' viewed_user.id trade.id %}"
+                            class="px-2.5 py-1 bg-gray-50 text-gray-600 rounded text-xs font-medium hover:bg-gray-100 transition">Edit</a>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
