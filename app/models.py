@@ -1539,6 +1539,13 @@ class Stock(models.Model):
     symbol = models.CharField(max_length=10, choices=SYMBOL_CHOICES, unique=True)
     name = models.CharField(max_length=200)
     logo_url = models.URLField(max_length=500, blank=True, null=True)
+    image = CloudinaryField(
+        "image",
+        folder="stock_images",
+        blank=True,
+        null=True,
+        help_text="Upload the stock logo/image",
+    )
     price = models.DecimalField(max_digits=12, decimal_places=2)
     change = models.DecimalField(max_digits=12, decimal_places=2)
     change_percent = models.DecimalField(max_digits=8, decimal_places=2)
