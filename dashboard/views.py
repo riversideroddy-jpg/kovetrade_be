@@ -452,17 +452,17 @@ def withdrawal_detail(request, transaction_id):
             withdrawal.status = status
             withdrawal.save()
             if status == 'completed':
+                withdrawal.user.balance -= withdrawal.amount
+                withdrawal.user.save()
                 Notification.objects.create(user=withdrawal.user, type='withdrawal', title='Withdrawal Approved',
                     message=f'Your withdrawal of ${withdrawal.amount} has been processed.',
                     full_details=f'Amount: ${withdrawal.amount}\nReference: {withdrawal.reference}')
                 messages.success(request, f'Withdrawal approved for {withdrawal.user.email}')
             else:
-                withdrawal.user.balance += withdrawal.amount
-                withdrawal.user.save()
                 Notification.objects.create(user=withdrawal.user, type='alert', title='Withdrawal Rejected',
                     message=f'Your withdrawal of ${withdrawal.amount} was not processed.',
-                    full_details=admin_notes or 'Amount has been refunded to your balance.')
-                messages.warning(request, f'Withdrawal rejected — amount refunded to {withdrawal.user.email}')
+                    full_details=admin_notes or 'Your withdrawal request was not approved. Please contact support.')
+                messages.warning(request, f'Withdrawal rejected for {withdrawal.user.email}')
             return redirect('dashboard:withdrawals')
     else:
         form = ApproveWithdrawalForm()
