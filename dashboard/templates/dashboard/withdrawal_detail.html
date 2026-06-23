@@ -14,6 +14,12 @@
             <div class="py-3 border-b border-gray-100"><p class="text-gray-500 text-xs mb-1">Currency</p><p class="font-medium">{{ withdrawal.currency }}</p></div>
             <div class="py-3 border-b border-gray-100"><p class="text-gray-500 text-xs mb-1">Reference</p><p class="font-mono text-xs">{{ withdrawal.reference }}</p></div>
             <div class="py-3 border-b border-gray-100"><p class="text-gray-500 text-xs mb-1">Created</p><p>{{ withdrawal.created_at|date:"M d, Y H:i" }}</p></div>
+            <div class="py-3 border-b border-gray-100">
+                <p class="text-gray-500 text-xs mb-1">Withdraw From</p>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium {% if withdrawal.withdrawal_source == 'profit' %}bg-emerald-50 text-emerald-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                    {{ withdrawal.withdrawal_source|title }}
+                </span>
+            </div>
             {% if withdrawal.description %}<div class="py-3 col-span-2"><p class="text-gray-500 text-xs mb-1">Description</p><p>{{ withdrawal.description }}</p></div>{% endif %}
         </div>
 
@@ -39,6 +45,7 @@
         </div>
         <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-500">Balance</span><span class="font-medium">${{ withdrawal.user.balance|floatformat:2|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Profit</span><span class="font-medium text-emerald-600">${{ withdrawal.user.profit|floatformat:2|intcomma }}</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Verified</span>{% if withdrawal.user.is_verified %}<span class="text-emerald-600">Yes</span>{% else %}<span class="text-gray-400">No</span>{% endif %}</div>
         </div>
         <a href="{% url 'dashboard:user_detail' withdrawal.user.id %}" class="block mt-4 text-center px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition">View Full Profile</a>

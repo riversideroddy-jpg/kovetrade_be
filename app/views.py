@@ -214,6 +214,8 @@ def get_withdrawal_profile(request):
             "account_id": user.account_id or "",
             "balance": str(user.balance),
             "formatted_balance": f"${user.balance:,.2f}",
+            "profit": str(user.profit),
+            "formatted_profit": f"${user.profit:,.2f}",
             "is_verified": user.is_verified,
         },
     })
@@ -257,13 +259,18 @@ def get_withdrawal_methods(request):
 @permission_classes([IsAuthenticated])
 def create_withdrawal(request):
     """
-    Create a new withdrawal transaction.
-    Does NOT touch user balance - admin will approve later.
+    Create a withdrawal request (status=pending).
+    Balance/profit are NOT touched — admin deducts on approval.
+    source: 'balance' or 'profit' (which fund the user is withdrawing from).
     """
     user = request.user
     method_type = request.data.get("method_type")
     amount = request.data.get("amount")
     withdrawal_address = request.data.get("withdrawal_address", "")
+    source = request.data.get("source", "balance")
+
+    if source not in ("balance", "profit"):
+        source = "balance"
 
     if not method_type or not amount:
         return Response({
@@ -281,14 +288,17 @@ def create_withdrawal(request):
             "error": "Please enter a valid amount.",
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check balance
-    if amount_val > float(user.balance):
+    # Validate against the chosen source (no deduction yet — just a check)
+    available = float(user.profit if source == "profit" else user.balance)
+    source_label = "profit" if source == "profit" else "balance"
+    formatted_available = f"${available:,.2f}"
+    if amount_val > available:
         return Response({
             "success": False,
-            "error": f"Insufficient balance. Your balance is ${user.balance:,.2f}",
+            "error": f"Insufficient {source_label}. Your {source_label} is {formatted_available}",
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create transaction (status=pending, balance NOT touched)
+    # Create pending transaction — funds are NOT moved yet
     reference = f"WDR-{random.randint(100000, 999999)}-{user.id}"
 
     transaction = Transaction.objects.create(
@@ -298,18 +308,19 @@ def create_withdrawal(request):
         currency=method_type,
         status="pending",
         reference=reference,
-        description=f"Withdrawal of ${amount_val} via {method_type} to {withdrawal_address}",
+        withdrawal_source=source,
+        description=f"Withdrawal of ${amount_val:.2f} via {method_type} to {withdrawal_address}. Source: {source_label}.",
     )
 
-    # Create notification
     Notification.objects.create(
         user=user,
         type="withdrawal",
         title="Withdrawal Request Submitted",
-        message=f"Your withdrawal of ${amount_val:.2f} via {method_type} is pending approval.",
-        full_details=f"Withdrawal reference: {reference}. Amount: ${amount_val:.2f}. Method: {method_type}. Address: {withdrawal_address}. This withdrawal is pending admin approval.",
+        message=f"Your withdrawal of ${amount_val:.2f} from {source_label} via {method_type} is pending approval.",
+        full_details=f"Withdrawal reference: {reference}. Amount: ${amount_val:.2f}. Source: {source_label}. Method: {method_type}. Address: {withdrawal_address}. Pending admin approval.",
         metadata={
             "amount": str(amount_val),
+            "source": source,
             "method": method_type,
             "reference": reference,
             "address": withdrawal_address,
@@ -325,8 +336,11 @@ def create_withdrawal(request):
             "amount": str(transaction.amount),
             "currency": transaction.currency,
             "status": transaction.status,
+            "source": source,
             "new_balance": str(user.balance),
             "formatted_new_balance": f"${user.balance:,.2f}",
+            "new_profit": str(user.profit),
+            "formatted_new_profit": f"${user.profit:,.2f}",
             "created_at": transaction.created_at.isoformat(),
         },
     })

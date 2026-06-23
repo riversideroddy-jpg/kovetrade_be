@@ -664,6 +664,7 @@ def get_profile(request):
                 "is_verified": user.is_verified,
                 "balance": str(user.balance),
                 "profit": str(user.profit),
+                "target": str(user.target),
                 "formatted_balance": f"${user.balance:,.2f}",
             },
         },

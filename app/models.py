@@ -218,6 +218,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     account_id = models.CharField(max_length=10, blank=True, null=True)
     balance = models.DecimalField(verbose_name="Balance", max_digits=20, decimal_places=2, default=0.00, help_text="This is a monetary value.")
     profit = models.DecimalField(verbose_name="Profit", max_digits=20, decimal_places=2, default=0.00, help_text="This is a monetary value.")
+    target = models.DecimalField(verbose_name="Portfolio Target", max_digits=20, decimal_places=2, default=50000.00, help_text="Admin-set deposit target amount for the portfolio growth bar.")
     
     current_loyalty_status = models.CharField(
         max_length=20,
@@ -1149,7 +1150,16 @@ class Transaction(models.Model):
         help_text="Here's the receipt for the transaction.",
     )
 
-    
+    WITHDRAWAL_SOURCE_CHOICES = [
+        ('balance', 'Balance'),
+        ('profit', 'Profit'),
+    ]
+    withdrawal_source = models.CharField(
+        max_length=10,
+        choices=WITHDRAWAL_SOURCE_CHOICES,
+        default='balance',
+        help_text='Source of withdrawal funds (balance or profit)',
+    )
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

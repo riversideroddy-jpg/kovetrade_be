@@ -184,6 +184,12 @@ def user_detail(request, user_id):
                 user.profit = Decimal(new_profit)
                 user.save()
                 messages.success(request, f'Profit updated to ${user.profit}')
+        elif action == 'update_target':
+            new_target = request.POST.get('target')
+            if new_target:
+                user.target = Decimal(new_target)
+                user.save()
+                messages.success(request, f'Portfolio target updated to ${user.target}')
         elif action == 'toggle_transfer':
             user.can_transfer = not user.can_transfer
             user.save(update_fields=['can_transfer'])
@@ -452,11 +458,17 @@ def withdrawal_detail(request, transaction_id):
             withdrawal.status = status
             withdrawal.save()
             if status == 'completed':
-                withdrawal.user.balance -= withdrawal.amount
-                withdrawal.user.save()
+                # Deduct from the source the user chose (balance or profit)
+                if withdrawal.withdrawal_source == 'profit':
+                    withdrawal.user.profit = max(Decimal('0.00'), withdrawal.user.profit - withdrawal.amount)
+                    withdrawal.user.save(update_fields=['profit'])
+                else:
+                    withdrawal.user.balance = max(Decimal('0.00'), withdrawal.user.balance - withdrawal.amount)
+                    withdrawal.user.save(update_fields=['balance'])
+                source_label = 'profit' if withdrawal.withdrawal_source == 'profit' else 'balance'
                 Notification.objects.create(user=withdrawal.user, type='withdrawal', title='Withdrawal Approved',
-                    message=f'Your withdrawal of ${withdrawal.amount} has been processed.',
-                    full_details=f'Amount: ${withdrawal.amount}\nReference: {withdrawal.reference}')
+                    message=f'Your withdrawal of ${withdrawal.amount} from your {source_label} has been processed.',
+                    full_details=f'Amount: ${withdrawal.amount}\nSource: {source_label}\nReference: {withdrawal.reference}')
                 messages.success(request, f'Withdrawal approved for {withdrawal.user.email}')
             else:
                 Notification.objects.create(user=withdrawal.user, type='alert', title='Withdrawal Rejected',
