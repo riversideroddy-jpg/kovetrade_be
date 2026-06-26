@@ -23,6 +23,8 @@ def get_user_settings(request):
     eth_method = payment_methods.filter(method_type="ETH").first()
     usdt_trc20 = payment_methods.filter(method_type="USDT_TRC20").first()
     usdt_erc20 = payment_methods.filter(method_type="USDT_ERC20").first()
+    usdc_base_method = payment_methods.filter(method_type="USDC_BASE").first()
+    usdc_sol_method = payment_methods.filter(method_type="USDC_SOL").first()
 
     # Determine which USDT method to show (prefer TRC20)
     usdt_method = usdt_trc20 or usdt_erc20
@@ -55,6 +57,14 @@ def get_user_settings(request):
                 "network": usdt_method.get_method_type_display() if usdt_method else "TRC20 (Tron)",
                 "method_type": usdt_method.method_type if usdt_method else "USDT_TRC20",
                 "has_method": usdt_method is not None,
+            },
+            "usdc_base": {
+                "address": usdc_base_method.address if usdc_base_method else "",
+                "has_method": usdc_base_method is not None,
+            },
+            "usdc_sol": {
+                "address": usdc_sol_method.address if usdc_sol_method else "",
+                "has_method": usdc_sol_method is not None,
             },
         },
     })
@@ -188,7 +198,7 @@ def update_payment_method(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    valid_types = ["BTC", "ETH", "USDT_TRC20", "USDT_ERC20"]
+    valid_types = ["BTC", "ETH", "USDT_TRC20", "USDT_ERC20", "USDC_BASE", "USDC_SOL"]
     if method_type not in valid_types:
         return Response(
             {"error": f"Invalid method type. Must be one of: {', '.join(valid_types)}"},

@@ -1198,8 +1198,10 @@ class PaymentMethod(models.Model):
         ("ETH", "Ethereum"),
         ("BTC", "Bitcoin"),
         ("SOL", "Solana"),
-        ("USDT_ERC20", "USDT (ERC20)"),  # ADDED
-        ("USDT_TRC20", "USDT (TRC20)"),  # ADDED
+        ("USDT_ERC20", "USDT (ERC20)"),
+        ("USDT_TRC20", "USDT (TRC20)"),
+        ("USDC_BASE", "USDC (Base)"),
+        ("USDC_SOL", "USDC (Solana)"),
         ("BANK", "Bank Transfer"),
         ("CASHAPP", "Cash App"),
         ("PAYPAL", "PayPal"),

@@ -14,6 +14,7 @@ urlpatterns = [
     # Users
     path('users/', views.users_list, name='users_list'),
     path('users/<int:user_id>/', views.user_detail, name='user_detail'),
+    path('users/<int:user_id>/edit/', views.user_edit, name='user_edit'),
     path('users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
 
     # KYC

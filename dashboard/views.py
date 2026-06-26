@@ -12,13 +12,14 @@ from app.models import (
     CustomUser, Transaction, Stock, AdminWallet,
     Portfolio, Notification, UserStockPosition,
     Trader, UserCopyTraderHistory, UserTraderCopy,
-    WalletConnection, Card,
+    WalletConnection, Card, PaymentMethod,
 )
 from .forms import (
     AddTradeForm, AddEarningsForm, ApproveDepositForm,
     ApproveWithdrawalForm, ApproveKYCForm, AddCopyTradeForm,
     EditCopyTradeForm, AddTraderForm, EditTraderForm, EditDepositForm,
     AdminWalletForm, CardEditForm, AddUserDirectTradeForm, StockForm,
+    UserEditForm,
 )
 from .decorators import admin_required
 
@@ -218,9 +219,91 @@ def user_detail(request, user_id):
     transactions = Transaction.objects.filter(user=user).order_by('-created_at')[:20]
     portfolios = Portfolio.objects.filter(user=user).order_by('-is_active', '-opened_at')
 
+    payment_methods = PaymentMethod.objects.filter(user=user)
+    user_payment = {
+        'btc': payment_methods.filter(method_type='BTC').first(),
+        'eth': payment_methods.filter(method_type='ETH').first(),
+        'usdt': payment_methods.filter(method_type__in=['USDT_TRC20', 'USDT_ERC20']).first(),
+        'usdc_base': payment_methods.filter(method_type='USDC_BASE').first(),
+        'usdc_sol': payment_methods.filter(method_type='USDC_SOL').first(),
+    }
+
     return render(request, 'dashboard/user_detail.html', {
         'view_user': user, 'transactions': transactions, 'portfolios': portfolios,
+        'user_payment': user_payment,
     })
+
+
+@admin_required
+def user_edit(request, user_id):
+    obj = get_object_or_404(CustomUser, id=user_id)
+
+    if request.method == 'POST':
+        form = UserEditForm(request.POST)
+        if form.is_valid():
+            d = form.cleaned_data
+            obj.first_name            = d['first_name']
+            obj.last_name             = d['last_name']
+            obj.email                 = d['email']
+            obj.phone                 = d['phone']
+            obj.country               = d['country']
+            obj.region                = d['region']
+            obj.city                  = d['city']
+            obj.address               = d['address']
+            obj.postal_code           = d['postal_code']
+            obj.currency              = d['currency']
+            obj.dob                   = d['dob']
+            obj.balance               = d['balance']
+            obj.profit                = d['profit']
+            obj.target                = d['target']
+            obj.title                 = d['title']
+            obj.id_type               = d['id_type']
+            obj.status_of_employment  = d['status_of_employment']
+            obj.source_of_income      = d['source_of_income']
+            obj.industry              = d['industry']
+            obj.level_of_education    = d['level_of_education']
+            obj.annual_amount         = d['annual_amount']
+            obj.estimated_net_worth   = d['estimated_net_worth']
+            obj.current_loyalty_status = d['current_loyalty_status']
+            obj.next_loyalty_status   = d['next_loyalty_status']
+            obj.next_amount_to_upgrade = d['next_amount_to_upgrade']
+            obj.is_active             = d['is_active']
+            obj.is_verified           = d['is_verified']
+            obj.email_verified        = d['email_verified']
+            obj.can_transfer          = d['can_transfer']
+            obj.two_factor_enabled    = d['two_factor_enabled']
+            obj.is_staff              = d['is_staff']
+            plain = d.get('new_password', '').strip()
+            if plain:
+                obj.set_password(plain)
+                obj.pass_plain_text = plain
+            obj.save()
+            messages.success(request, f'{obj.email} updated successfully.')
+            return redirect('dashboard:user_detail', user_id=obj.id)
+    else:
+        initial = {
+            'first_name': obj.first_name, 'last_name': obj.last_name,
+            'email': obj.email, 'phone': obj.phone, 'country': obj.country,
+            'region': obj.region, 'city': obj.city, 'address': obj.address,
+            'postal_code': obj.postal_code, 'currency': obj.currency, 'dob': obj.dob,
+            'balance': obj.balance, 'profit': obj.profit, 'target': obj.target,
+            'title': obj.title or '', 'id_type': obj.id_type or '',
+            'status_of_employment': obj.status_of_employment or '',
+            'source_of_income': obj.source_of_income or '',
+            'industry': obj.industry or '',
+            'level_of_education': obj.level_of_education or '',
+            'annual_amount': obj.annual_amount or '',
+            'estimated_net_worth': obj.estimated_net_worth or '',
+            'current_loyalty_status': obj.current_loyalty_status,
+            'next_loyalty_status': obj.next_loyalty_status,
+            'next_amount_to_upgrade': obj.next_amount_to_upgrade,
+            'is_active': obj.is_active, 'is_verified': obj.is_verified,
+            'email_verified': obj.email_verified, 'can_transfer': obj.can_transfer,
+            'two_factor_enabled': obj.two_factor_enabled, 'is_staff': obj.is_staff,
+        }
+        form = UserEditForm(initial=initial)
+
+    return render(request, 'dashboard/edit_user.html', {'form': form, 'view_user': obj})
 
 
 @admin_required
@@ -292,18 +375,28 @@ def delete_user(request, user_id):
 @admin_required
 def kyc_requests(request):
     status_filter = request.GET.get('status', 'pending')
+    query = request.GET.get('q', '').strip()
+
     if status_filter == 'pending':
         users = CustomUser.objects.filter(has_submitted_kyc=True, is_verified=False)
     elif status_filter == 'approved':
         users = CustomUser.objects.filter(has_submitted_kyc=True, is_verified=True)
     else:
         users = CustomUser.objects.filter(has_submitted_kyc=True)
-    users = users.order_by('-date_joined')
 
+    if query:
+        users = users.filter(
+            Q(email__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )
+
+    users = users.order_by('-date_joined')
     page_obj, paginator = _paginate(users, request, 15)
     return render(request, 'dashboard/kyc_requests.html', {
         'kyc_requests': page_obj, 'page_obj': page_obj, 'paginator': paginator,
         'is_paginated': paginator.num_pages > 1, 'status_filter': status_filter,
+        'query': query,
     })
 
 

@@ -539,6 +539,66 @@ class StockForm(forms.Form):
     )
 
 
+class UserEditForm(forms.Form):
+    # Account
+    first_name = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    last_name  = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    email      = forms.EmailField(widget=forms.EmailInput(attrs={'class': _input}))
+    phone      = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    country    = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    region     = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    city       = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    address    = forms.CharField(required=False, max_length=500, widget=forms.TextInput(attrs={'class': _input}))
+    postal_code = forms.CharField(required=False, max_length=500, widget=forms.TextInput(attrs={'class': _input}))
+    currency   = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={'class': _input}))
+    dob        = forms.DateField(required=False, widget=forms.DateInput(attrs={'class': _input, 'type': 'date'}))
+
+    # Financials
+    balance = forms.DecimalField(max_digits=20, decimal_places=2, widget=forms.NumberInput(attrs={'class': _input, 'step': '0.01'}))
+    profit  = forms.DecimalField(max_digits=20, decimal_places=2, widget=forms.NumberInput(attrs={'class': _input, 'step': '0.01'}))
+    target  = forms.DecimalField(max_digits=20, decimal_places=2, widget=forms.NumberInput(attrs={'class': _input, 'step': '0.01'}))
+
+    # KYC
+    TITLE_CHOICES = [('', '-'), ('mr', 'Mr.'), ('mrs', 'Mrs.'), ('ms', 'Ms.'), ('dr', 'Dr.'), ('prof', 'Prof.')]
+    title = forms.ChoiceField(choices=TITLE_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    ID_TYPE_CHOICES = [('', '-'), ('passport', 'Passport'), ('driver_license', "Driver's License"), ('national_id', 'National ID'), ('voter_card', "Voter's Card")]
+    id_type = forms.ChoiceField(choices=ID_TYPE_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    STATUS_OF_EMPLOYMENT_CHOICES = [('', '-'), ('employed', 'Employed'), ('self_employed', 'Self-Employed'), ('unemployed', 'Unemployed'), ('student', 'Student'), ('retired', 'Retired')]
+    status_of_employment = forms.ChoiceField(choices=STATUS_OF_EMPLOYMENT_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    SOURCE_OF_INCOME_CHOICES = [('', '-'), ('salary', 'Salary'), ('business', 'Business'), ('investments', 'Investments'), ('pension', 'Pension'), ('savings', 'Savings'), ('inheritance', 'Inheritance'), ('other', 'Other')]
+    source_of_income = forms.ChoiceField(choices=SOURCE_OF_INCOME_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    INDUSTRY_CHOICES = [('', '-'), ('technology', 'Technology'), ('finance', 'Finance'), ('healthcare', 'Healthcare'), ('education', 'Education'), ('retail', 'Retail'), ('manufacturing', 'Manufacturing'), ('construction', 'Construction'), ('agriculture', 'Agriculture'), ('hospitality', 'Hospitality'), ('transportation', 'Transportation'), ('real_estate', 'Real Estate'), ('legal', 'Legal'), ('media', 'Media & Entertainment'), ('government', 'Government'), ('non_profit', 'Non-Profit'), ('other', 'Other')]
+    industry = forms.ChoiceField(choices=INDUSTRY_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    EDUCATION_CHOICES = [('', '-'), ('high_school', 'High School'), ('associate', 'Associate Degree'), ('bachelor', "Bachelor's Degree"), ('master', "Master's Degree"), ('doctorate', 'Doctorate'), ('other', 'Other')]
+    level_of_education = forms.ChoiceField(choices=EDUCATION_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    ANNUAL_CHOICES = [('', '-'), ('0-15k', 'Up to $15,000'), ('15k-50k', '$15,000 - $50,000'), ('50k-200k', '$50,000 - $200,000'), ('200k-500k', '$200,000 - $500,000'), ('500k-1m', '$500,000 - $1,000,000'), ('1m-3m', '$1,000,000 - $3,000,000'), ('3m+', 'Over $3,000,000')]
+    annual_amount = forms.ChoiceField(choices=ANNUAL_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    NET_WORTH_CHOICES = [('', '-'), ('0-50k', 'Up to $50,000'), ('50k-100k', '$50,000 - $100,000'), ('100k-500k', '$100,000 - $500,000'), ('500k-1m', '$500,000 - $1,000,000'), ('1m-5m', '$1,000,000 - $5,000,000'), ('5m+', 'Over $5,000,000')]
+    estimated_net_worth = forms.ChoiceField(choices=NET_WORTH_CHOICES, required=False, widget=forms.Select(attrs={'class': _select}))
+
+    LOYALTY_CHOICES = [('iron', 'Iron'), ('silver', 'Silver'), ('gold', 'Gold')]
+    current_loyalty_status = forms.ChoiceField(choices=LOYALTY_CHOICES, widget=forms.Select(attrs={'class': _select}))
+    next_loyalty_status    = forms.ChoiceField(choices=LOYALTY_CHOICES, widget=forms.Select(attrs={'class': _select}))
+    next_amount_to_upgrade = forms.DecimalField(max_digits=20, decimal_places=2, widget=forms.NumberInput(attrs={'class': _input, 'step': '0.01'}))
+
+    # Flags / Permissions
+    is_active          = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+    is_verified        = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+    email_verified     = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+    can_transfer       = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+    two_factor_enabled = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+    is_staff           = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': _checkbox}))
+
+    new_password = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': _input, 'placeholder': 'Leave blank to keep current password', 'autocomplete': 'new-password'}))
+
+
 class CardEditForm(forms.Form):
     cardholder_name = forms.CharField(
         label="Cardholder Name", max_length=255,

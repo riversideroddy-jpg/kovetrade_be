@@ -1,0 +1,213 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Edit {{ view_user.email }} - KoveTrade Admin{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center gap-3">
+    <a href="{% url 'dashboard:user_detail' view_user.id %}" class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1">
+        <i class="fas fa-arrow-left text-xs"></i> Back to {{ view_user.email }}
+    </a>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <h4 class="text-sm font-semibold text-red-700 mb-2"><i class="fas fa-exclamation-circle mr-1"></i>Please fix these errors:</h4>
+        <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+        {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Account Info -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-user mr-2 text-indigo-500"></i>Account Info</h3></div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">First Name</label>
+                {{ form.first_name }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Last Name</label>
+                {{ form.last_name }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Email *</label>
+                {{ form.email }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Phone</label>
+                {{ form.phone }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Currency</label>
+                {{ form.currency }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Date of Birth</label>
+                {{ form.dob }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-map-marker-alt mr-2 text-indigo-500"></i>Location</h3></div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Country</label>
+                {{ form.country }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Region / State</label>
+                {{ form.region }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">City</label>
+                {{ form.city }}
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Address</label>
+                {{ form.address }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Postal Code</label>
+                {{ form.postal_code }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Financials -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-dollar-sign mr-2 text-indigo-500"></i>Financials</h3></div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Balance ($)</label>
+                {{ form.balance }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Profit ($)</label>
+                {{ form.profit }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Portfolio Target ($)</label>
+                {{ form.target }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Loyalty Tier -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-medal mr-2 text-indigo-500"></i>Loyalty Tier</h3></div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Current Loyalty Status</label>
+                {{ form.current_loyalty_status }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Next Loyalty Status</label>
+                {{ form.next_loyalty_status }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Amount to Upgrade ($)</label>
+                {{ form.next_amount_to_upgrade }}
+            </div>
+        </div>
+    </div>
+
+    <!-- KYC Information -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-id-card mr-2 text-indigo-500"></i>KYC Information</h3></div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Title</label>
+                {{ form.title }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">ID Type</label>
+                {{ form.id_type }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Employment Status</label>
+                {{ form.status_of_employment }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Source of Income</label>
+                {{ form.source_of_income }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Industry</label>
+                {{ form.industry }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Level of Education</label>
+                {{ form.level_of_education }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Annual Income</label>
+                {{ form.annual_amount }}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Estimated Net Worth</label>
+                {{ form.estimated_net_worth }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions & Flags -->
+    <div class="bg-white rounded-xl border border-gray-200/60 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700"><i class="fas fa-shield-alt mr-2 text-indigo-500"></i>Permissions & Flags</h3></div>
+        <div class="p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.is_active }}
+                <span class="text-sm text-gray-700">Active</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.is_verified }}
+                <span class="text-sm text-gray-700">Verified</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.email_verified }}
+                <span class="text-sm text-gray-700">Email Verified</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.can_transfer }}
+                <span class="text-sm text-gray-700">Can Transfer</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.two_factor_enabled }}
+                <span class="text-sm text-gray-700">2FA Enabled</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                {{ form.is_staff }}
+                <span class="text-sm text-gray-700">Staff / Admin</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Password Reset -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-amber-200"><h3 class="text-sm font-semibold text-amber-800"><i class="fas fa-lock mr-2"></i>Reset Password <span class="text-xs font-normal text-amber-600">(dev only — leave blank to keep current)</span></h3></div>
+        <div class="p-6">
+            <p class="text-xs text-amber-700 mb-3">Current stored: <span class="font-mono">{{ view_user.pass_plain_text|default:"not stored" }}</span></p>
+            <div class="max-w-sm">
+                {{ form.new_password }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex items-center gap-4 pb-6">
+        <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-500 transition">
+            <i class="fas fa-save mr-2"></i>Save Changes
+        </button>
+        <a href="{% url 'dashboard:user_detail' view_user.id %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">
+            Cancel
+        </a>
+    </div>
+
+</form>
+{% endblock %}
