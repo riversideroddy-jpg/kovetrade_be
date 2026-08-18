@@ -1178,6 +1178,41 @@ class Transaction(models.Model):
         verbose_name_plural = "Transactions"
         verbose_name = "Transaction"
 
+
+class TransferHistory(models.Model):
+
+    DIRECTION_CHOICES = [
+        ('balance_to_profit', 'Balance to Profit'),
+        ('profit_to_balance', 'Profit to Balance'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="transfer_history"
+    )
+    direction = models.CharField(max_length=20, choices=DIRECTION_CHOICES)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    balance_after = models.DecimalField(
+        max_digits=20, decimal_places=2,
+        help_text="User's balance immediately after this transfer"
+    )
+    profit_after = models.DecimalField(
+        max_digits=20, decimal_places=2,
+        help_text="User's profit immediately after this transfer"
+    )
+    currency = models.CharField(max_length=10, default="USD")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.get_direction_display()} - {self.amount}"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Transfer History"
+        verbose_name = "Transfer History"
+
+
 class Ticket(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

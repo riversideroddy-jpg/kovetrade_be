@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from decimal import Decimal, InvalidOperation
 
+from .models import TransferHistory
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -82,8 +84,39 @@ def make_transfer(request):
 
     user.save(update_fields=["balance", "profit"])
 
+    TransferHistory.objects.create(
+        user=user,
+        direction=direction,
+        amount=amount,
+        balance_after=user.balance,
+        profit_after=user.profit,
+        currency=user.currency or "USD",
+    )
+
     return Response({
         "message": "Transfer successful.",
         "balance": str(user.balance),
         "profit": str(user.profit),
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def transfer_history(request):
+    """List the current user's transfer history, most recent first."""
+    history = TransferHistory.objects.filter(user=request.user)[:100]
+    return Response({
+        "results": [
+            {
+                "id": h.id,
+                "direction": h.direction,
+                "direction_display": h.get_direction_display(),
+                "amount": str(h.amount),
+                "balance_after": str(h.balance_after),
+                "profit_after": str(h.profit_after),
+                "currency": h.currency,
+                "created_at": h.created_at.isoformat(),
+            }
+            for h in history
+        ]
     })

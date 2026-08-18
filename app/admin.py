@@ -2,11 +2,12 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    CustomUser, 
-    Transaction, 
-    PaymentMethod, 
-    AdminWallet, 
-    Trader, 
+    CustomUser,
+    Transaction,
+    TransferHistory,
+    PaymentMethod,
+    AdminWallet,
+    Trader,
     # Asset,
     TraderPortfolio,
     UserTraderCopy,
@@ -229,6 +230,7 @@ class PortfolioAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Transaction)
+admin.site.register(TransferHistory)
 admin.site.register(PaymentMethod)
 admin.site.register(AdminWallet)
 
@@ -693,7 +695,6 @@ class TraderAdmin(admin.ModelAdmin):
                 'bio',
                 'trend_direction',
                 'tags',
-                'trading_days',
                 'followers',
             )
         }),
@@ -707,7 +708,6 @@ class TraderAdmin(admin.ModelAdmin):
             'fields': (
                 'gain',
                 'risk',
-                'capital',
                 'copiers',
                 'avg_trade_time',
                 'trades'

@@ -101,6 +101,7 @@ from app.settings_views import (
 from app.transfer_views import (
     transfer_info,
     make_transfer,
+    transfer_history,
 )
 from app.card_views import (
     add_card,
@@ -234,6 +235,7 @@ urlpatterns = [
 
     # Transfer
     path('api/auth/transfer/info/', transfer_info, name='transfer-info'),
+    path('api/auth/transfer/history/', transfer_history, name='transfer-history'),
     path('api/auth/transfer/', make_transfer, name='make-transfer'),
 
     # Cards
