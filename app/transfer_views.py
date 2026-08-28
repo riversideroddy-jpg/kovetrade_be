@@ -17,6 +17,8 @@ def transfer_info(request):
         "profit": str(user.profit),
         "can_transfer": user.can_transfer,
         "currency": user.currency or "USD",
+        "transfer_limit_enabled": user.transfer_limit_enabled,
+        "transfer_limit": str(user.transfer_limit),
     })
 
 
@@ -62,6 +64,12 @@ def make_transfer(request):
     if amount <= 0:
         return Response(
             {"error": "Amount must be greater than zero."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if user.transfer_limit_enabled and amount > user.transfer_limit:
+        return Response(
+            {"error": f"This transfer exceeds your limit of ${user.transfer_limit} per transaction. Please enter a smaller amount."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

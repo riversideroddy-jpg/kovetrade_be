@@ -94,13 +94,22 @@
                         <button class="w-full px-3 py-2.5 bg-cyan-50 text-cyan-700 rounded-lg text-xs font-medium hover:bg-cyan-100 transition"><i class="fas fa-exchange-alt mr-1"></i>Enable Transfer</button>
                         {% endif %}
                     </form>
+
+                    <form method="post">{% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_transfer_limit">
+                        {% if view_user.transfer_limit_enabled %}
+                        <button class="w-full px-3 py-2.5 bg-orange-50 text-orange-700 rounded-lg text-xs font-medium hover:bg-orange-100 transition"><i class="fas fa-hand-paper mr-1"></i>Disable Transfer Limit</button>
+                        {% else %}
+                        <button class="w-full px-3 py-2.5 bg-cyan-50 text-cyan-700 rounded-lg text-xs font-medium hover:bg-cyan-100 transition"><i class="fas fa-hand-paper mr-1"></i>Enable Transfer Limit</button>
+                        {% endif %}
+                    </form>
                 </div>
             </div>
 
             <!-- Update Financials -->
             <div class="bg-white rounded-xl border border-gray-200/60 p-5">
                 <h4 class="text-sm font-semibold text-gray-700 mb-4">Update Financials</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                     <form method="post">{% csrf_token %}
                         <input type="hidden" name="action" value="update_balance">
                         <label class="block text-xs font-medium text-gray-500 mb-1.5">Balance ($)</label>
@@ -118,6 +127,12 @@
                         <label class="block text-xs font-medium text-gray-500 mb-1.5">Portfolio Target ($)</label>
                         <input type="number" name="target" step="0.01" value="{{ view_user.target }}" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 mb-2">
                         <button class="w-full py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-400 transition">Update Target</button>
+                    </form>
+                    <form method="post">{% csrf_token %}
+                        <input type="hidden" name="action" value="update_transfer_limit">
+                        <label class="block text-xs font-medium text-gray-500 mb-1.5">Transfer Limit ($)</label>
+                        <input type="number" name="transfer_limit" step="0.01" value="{{ view_user.transfer_limit }}" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 mb-2">
+                        <button class="w-full py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-500 transition">Update Transfer Limit</button>
                     </form>
                 </div>
             </div>

@@ -286,6 +286,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text="Allow user to transfer between balance and profit"
     )
+    transfer_limit_enabled = models.BooleanField(
+        default=False,
+        help_text="Enforce a maximum amount per transfer for this user"
+    )
+    transfer_limit = models.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        default=500.00,
+        help_text="Maximum amount the user can transfer at a time (only enforced when transfer_limit_enabled is True)"
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
