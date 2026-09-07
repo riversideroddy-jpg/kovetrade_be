@@ -228,13 +228,13 @@ def user_detail(request, user_id):
             user.transfer_limit_enabled = not user.transfer_limit_enabled
             user.save(update_fields=['transfer_limit_enabled'])
             status = 'enabled' if user.transfer_limit_enabled else 'disabled'
-            messages.success(request, f'Transfer limit {status} for {user.email}')
+            messages.success(request, f'Daily transfer limit {status} for {user.email}')
         elif action == 'update_transfer_limit':
             new_transfer_limit = request.POST.get('transfer_limit')
             if new_transfer_limit:
                 user.transfer_limit = Decimal(new_transfer_limit)
                 user.save()
-                messages.success(request, f'Transfer limit updated to ${user.transfer_limit}')
+                messages.success(request, f'Daily transfer limit updated to ${user.transfer_limit}')
         elif action == 'delete_portfolio':
             portfolio_id = request.POST.get('portfolio_id')
             if portfolio_id:

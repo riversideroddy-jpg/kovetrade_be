@@ -3,8 +3,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from decimal import Decimal, InvalidOperation
+from django.utils import timezone
+from django.db.models import Sum
 
 from .models import TransferHistory
+
+
+def _transferred_today(user):
+    """Sum of all transfers (either direction) the user has made today (local calendar day)."""
+    total = TransferHistory.objects.filter(
+        user=user,
+        created_at__date=timezone.localdate(),
+    ).aggregate(total=Sum("amount"))["total"]
+    return total or Decimal("0")
 
 
 @api_view(["GET"])
@@ -12,6 +23,12 @@ from .models import TransferHistory
 def transfer_info(request):
     """Get user balance, profit, and transfer permission."""
     user = request.user
+    transferred_today = _transferred_today(user)
+    remaining_today = None
+    if user.transfer_limit_enabled:
+        remaining_today = user.transfer_limit - transferred_today
+        if remaining_today < 0:
+            remaining_today = Decimal("0")
     return Response({
         "balance": str(user.balance),
         "profit": str(user.profit),
@@ -19,6 +36,8 @@ def transfer_info(request):
         "currency": user.currency or "USD",
         "transfer_limit_enabled": user.transfer_limit_enabled,
         "transfer_limit": str(user.transfer_limit),
+        "transferred_today": str(transferred_today),
+        "transfer_limit_remaining_today": str(remaining_today) if remaining_today is not None else None,
     })
 
 
@@ -67,11 +86,16 @@ def make_transfer(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if user.transfer_limit_enabled and amount > user.transfer_limit:
-        return Response(
-            {"error": f"This transfer exceeds your limit of ${user.transfer_limit} per transaction. Please enter a smaller amount."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if user.transfer_limit_enabled:
+        transferred_today = _transferred_today(user)
+        if transferred_today + amount > user.transfer_limit:
+            remaining_today = user.transfer_limit - transferred_today
+            if remaining_today < 0:
+                remaining_today = Decimal("0")
+            return Response(
+                {"error": f"This transfer exceeds your daily transfer limit of ${user.transfer_limit}. You have ${remaining_today} remaining today."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     if direction == "balance_to_profit":
         if amount > user.balance:
