@@ -46,8 +46,11 @@
                     {% if u.is_verified %}<span class="px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700">Approved</span>
                     {% else %}<span class="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pending</span>{% endif %}
                 </td>
-                <td class="px-5 py-3">
+                <td class="px-5 py-3 flex gap-2">
                     <a href="{% url 'dashboard:kyc_detail' u.id %}" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition">Review</a>
+                    {% if not u.is_superuser %}
+                    <a href="{% url 'dashboard:delete_user' u.id %}" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition">Delete User</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}

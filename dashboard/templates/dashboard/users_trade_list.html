@@ -104,6 +104,10 @@
                         <td class="px-5 py-3 text-gray-600">{{ u.email }}</td>
                         <td class="px-5 py-3 text-xs text-gray-400">{{ u.date_joined|date:"M d, Y" }}</td>
                         <td class="px-5 py-3 flex gap-2">
+                            <a href="{% url 'dashboard:user_detail' u.id %}"
+                                class="inline-block px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium transition">
+                                View Details
+                            </a>
                             <a href="{% url 'dashboard:user_trade_detail' u.id %}"
                                 class="inline-block px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium transition">
                                 View Trades
