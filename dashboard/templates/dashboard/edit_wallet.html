@@ -8,7 +8,13 @@
         <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <h4 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-coins text-indigo-500"></i>Wallet Details</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div><label class="block text-sm font-medium text-gray-600 mb-1">{{ form.currency.label }}</label>{{ form.currency }}</div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.currency.label }}</label>
+                    <div class="flex items-center gap-3">
+                        <img id="wallet-icon-preview" src="{{ wallet.get_icon_url }}" class="w-9 h-9 rounded-full bg-indigo-50 object-contain p-1 shrink-0" alt="" />
+                        {{ form.currency }}
+                    </div>
+                </div>
                 <div><label class="block text-sm font-medium text-gray-600 mb-1">{{ form.amount.label }}</label>{{ form.amount }}</div>
                 <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-600 mb-1">{{ form.wallet_address.label }}</label>{{ form.wallet_address }}</div>
                 <div><label class="block text-sm font-medium text-gray-600 mb-1">{{ form.qr_code.label }}</label>{{ form.qr_code }}</div>
@@ -39,4 +45,16 @@
         </form>
     </div>
 </div>
+
+{{ icon_map|json_script:"currency-icon-map" }}
+<script>
+  const CURRENCY_ICON_MAP = JSON.parse(document.getElementById("currency-icon-map").textContent);
+  const currencySelect = document.getElementById("id_currency");
+  const iconPreview = document.getElementById("wallet-icon-preview");
+  function updateWalletIconPreview() {
+    const url = CURRENCY_ICON_MAP[currencySelect.value];
+    if (url) iconPreview.src = url;
+  }
+  if (currencySelect) currencySelect.addEventListener("change", updateWalletIconPreview);
+</script>
 {% endblock %}

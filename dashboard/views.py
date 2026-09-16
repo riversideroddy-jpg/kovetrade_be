@@ -1632,7 +1632,9 @@ def add_wallet(request):
                 return redirect('dashboard:wallets_list')
     else:
         form = AdminWalletForm()
-    return render(request, 'dashboard/add_wallet.html', {'form': form})
+    return render(request, 'dashboard/add_wallet.html', {
+        'form': form, 'icon_map': AdminWallet.CURRENCY_ICON_MAP,
+    })
 
 
 @admin_required
@@ -1660,7 +1662,9 @@ def edit_wallet(request, wallet_id):
             'currency': wallet.currency, 'amount': wallet.amount,
             'wallet_address': wallet.wallet_address, 'is_active': wallet.is_active,
         })
-    return render(request, 'dashboard/edit_wallet.html', {'form': form, 'wallet': wallet})
+    return render(request, 'dashboard/edit_wallet.html', {
+        'form': form, 'wallet': wallet, 'icon_map': AdminWallet.CURRENCY_ICON_MAP,
+    })
 
 
 @admin_required

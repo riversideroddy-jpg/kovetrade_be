@@ -1297,6 +1297,43 @@ class AdminWallet(models.Model):
         ("TON", "Toncoin (TON)"),
     ]
 
+    # Real-brand coin logos, keyed by `currency` — auto-applied so admins
+    # never have to source/upload an icon image themselves. Every network
+    # variant of a coin (e.g. all four USDT entries, all four USDC entries)
+    # deliberately shares that coin's own logo rather than falling back to
+    # a default, so nothing silently displays as Bitcoin.
+    CURRENCY_ICON_MAP = {
+        "BTC":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/btc.svg",
+        "ETH":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/eth.svg",
+        "SOL":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/sol.svg",
+        "USDT ERC20": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
+        "USDT TRC20": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
+        "USDT SOL":   "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
+        "USDT BEP20": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
+        "BNB":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/bnb.svg",
+        "TRX":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/trx.svg",
+        "USDC":       "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdc.svg",
+        "USDC ERC20": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdc.svg",
+        "USDC SOL":   "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdc.svg",
+        "USDC TRC20": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdc.svg",
+        "XRP":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/xrp.svg",
+        "LTC":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/ltc.svg",
+        "DOGE":       "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/doge.svg",
+        "ADA":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/ada.svg",
+        "AVAX":       "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/avax.svg",
+        "MATIC":      "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/matic.svg",
+        "DOT":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/dot.svg",
+        "ATOM":       "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/atom.svg",
+        "DAI":        "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/dai.svg",
+        "LINK":       "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/link.svg",
+        # Not in the cryptocurrency-icons set yet — CoinMarketCap's static
+        # image CDN has it under Toncoin's coin id.
+        "TON":        "https://s2.coinmarketcap.com/static/img/coins/64x64/11419.png",
+    }
+    # Used only if a future CURRENCY_CHOICES entry is added without a
+    # matching logo above — a neutral coin glyph, never another coin's logo.
+    DEFAULT_ICON_URL = "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/generic.svg"
+
     currency = models.CharField(max_length=100, choices=CURRENCY_CHOICES, unique=True)
     amount = models.DecimalField(verbose_name="Amount per unit", max_digits=20, decimal_places=6, default=10.00)
     wallet_address = models.CharField(max_length=255)
@@ -1319,6 +1356,9 @@ class AdminWallet(models.Model):
 
     def __str__(self):
         return f"{self.get_currency_display()} - {self.wallet_address[:10]}..."
+
+    def get_icon_url(self) -> str:
+        return self.CURRENCY_ICON_MAP.get(self.currency, self.DEFAULT_ICON_URL)
 
 
 class Asset(models.Model):
