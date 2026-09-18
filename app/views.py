@@ -13,7 +13,11 @@ from rest_framework import status
 
 from decimal import Decimal
 from .models import AdminWallet, Transaction, PaymentMethod, Notification, Stock
-from .email_service import send_admin_payment_intent_notification
+from .email_service import (
+    send_admin_payment_intent_notification,
+    send_admin_deposit_notification,
+    send_admin_withdrawal_notification,
+)
 
 # Maps the base currency code of an AdminWallet to its FMP Stock symbol
 _CRYPTO_TO_STOCK = {
@@ -158,6 +162,12 @@ def create_deposit(request):
         description=f"Deposit of ${amount} via {currency}",
         receipt=receipt,
     )
+
+    # Notify admin that a deposit request was submitted (non-blocking)
+    try:
+        send_admin_deposit_notification(user, transaction)
+    except Exception as e:
+        print(f"Failed to send admin deposit notification: {e}")
 
     # Create notification
     Notification.objects.create(
@@ -320,8 +330,10 @@ def get_withdrawal_methods(request):
 @permission_classes([IsAuthenticated])
 def create_withdrawal(request):
     """
-    Create a withdrawal request (status=pending).
-    Balance/profit are NOT touched — admin deducts on approval.
+    Create a withdrawal request (status=pending) and immediately hold the
+    funds by deducting them from the user's balance/profit. If the admin
+    rejects the request, the amount is credited back (see
+    dashboard.views.withdrawal_detail); if approved, it stays deducted.
     source: 'balance' or 'profit' (which fund the user is withdrawing from).
     """
     user = request.user
@@ -349,7 +361,7 @@ def create_withdrawal(request):
             "error": "Please enter a valid amount.",
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Validate against the chosen source (no deduction yet — just a check)
+    # Validate against the chosen source before holding the funds
     available = float(user.profit if source == "profit" else user.balance)
     source_label = "profit" if source == "profit" else "balance"
     formatted_available = f"${available:,.2f}"
@@ -359,7 +371,7 @@ def create_withdrawal(request):
             "error": f"Insufficient {source_label}. Your {source_label} is {formatted_available}",
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create pending transaction — funds are NOT moved yet
+    # Create pending transaction — funds are held from the balance/profit below
     reference = f"WDR-{random.randint(100000, 999999)}-{user.id}"
 
     transaction = Transaction.objects.create(
@@ -372,6 +384,23 @@ def create_withdrawal(request):
         withdrawal_source=source,
         description=f"Withdrawal of ${amount_val:.2f} via {method_type} to {withdrawal_address}. Source: {source_label}.",
     )
+
+    # Hold the funds immediately — they are only released back to the user
+    # if the admin rejects this request (see dashboard.views.withdrawal_detail).
+    amount_decimal = Decimal(str(amount_val))
+    if source == "profit":
+        user.profit = max(Decimal("0.00"), user.profit - amount_decimal)
+        user.save(update_fields=["profit"])
+    else:
+        user.balance = max(Decimal("0.00"), user.balance - amount_decimal)
+        user.save(update_fields=["balance"])
+
+    # Notify admin that a withdrawal request was submitted (non-blocking)
+    try:
+        payment_method = PaymentMethod.objects.filter(user=user, method_type=method_type).first()
+        send_admin_withdrawal_notification(user, transaction, payment_method)
+    except Exception as e:
+        print(f"Failed to send admin withdrawal notification: {e}")
 
     Notification.objects.create(
         user=user,

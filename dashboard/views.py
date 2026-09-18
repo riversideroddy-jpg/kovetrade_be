@@ -583,30 +583,35 @@ def withdrawals(request):
 def withdrawal_detail(request, transaction_id):
     withdrawal = get_object_or_404(Transaction, id=transaction_id, transaction_type='withdrawal')
     if request.method == 'POST':
+        if withdrawal.status != 'pending':
+            messages.error(request, 'This withdrawal has already been processed.')
+            return redirect('dashboard:withdrawal_detail', transaction_id=withdrawal.id)
         form = ApproveWithdrawalForm(request.POST)
         if form.is_valid():
             status = form.cleaned_data['status']
             admin_notes = form.cleaned_data['admin_notes']
             withdrawal.status = status
             withdrawal.save()
+            source_label = 'profit' if withdrawal.withdrawal_source == 'profit' else 'balance'
             if status == 'completed':
-                # Deduct from the source the user chose (balance or profit)
-                if withdrawal.withdrawal_source == 'profit':
-                    withdrawal.user.profit = max(Decimal('0.00'), withdrawal.user.profit - withdrawal.amount)
-                    withdrawal.user.save(update_fields=['profit'])
-                else:
-                    withdrawal.user.balance = max(Decimal('0.00'), withdrawal.user.balance - withdrawal.amount)
-                    withdrawal.user.save(update_fields=['balance'])
-                source_label = 'profit' if withdrawal.withdrawal_source == 'profit' else 'balance'
+                # Funds were already held from the user's balance/profit when
+                # the withdrawal was requested — nothing more to deduct here.
                 Notification.objects.create(user=withdrawal.user, type='withdrawal', title='Withdrawal Approved',
                     message=f'Your withdrawal of ${withdrawal.amount} from your {source_label} has been processed.',
                     full_details=f'Amount: ${withdrawal.amount}\nSource: {source_label}\nReference: {withdrawal.reference}')
                 messages.success(request, f'Withdrawal approved for {withdrawal.user.email}')
             else:
+                # Rejected — credit the held amount back to the source it came from.
+                if withdrawal.withdrawal_source == 'profit':
+                    withdrawal.user.profit = withdrawal.user.profit + withdrawal.amount
+                    withdrawal.user.save(update_fields=['profit'])
+                else:
+                    withdrawal.user.balance = withdrawal.user.balance + withdrawal.amount
+                    withdrawal.user.save(update_fields=['balance'])
                 Notification.objects.create(user=withdrawal.user, type='alert', title='Withdrawal Rejected',
-                    message=f'Your withdrawal of ${withdrawal.amount} was not processed.',
-                    full_details=admin_notes or 'Your withdrawal request was not approved. Please contact support.')
-                messages.warning(request, f'Withdrawal rejected for {withdrawal.user.email}')
+                    message=f'Your withdrawal of ${withdrawal.amount} was not processed and has been refunded to your {source_label}.',
+                    full_details=admin_notes or 'Your withdrawal request was not approved. The amount has been returned to your account. Please contact support.')
+                messages.warning(request, f'Withdrawal rejected for {withdrawal.user.email} — funds refunded.')
             return redirect('dashboard:withdrawals')
     else:
         form = ApproveWithdrawalForm()

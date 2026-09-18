@@ -721,7 +721,7 @@ def send_admin_withdrawal_notification(user, transaction, payment_method=None):
                 </div>
 
                 <div class="notice">
-                    <p><strong>Note:</strong> The user's balance has already been deducted. Process this withdrawal or refund if unable to complete.</p>
+                    <p><strong>Note:</strong> The user's balance has not been deducted yet — it will only be adjusted when this withdrawal is approved or declined.</p>
                 </div>
 
                 <div class="section-title">Transaction Details</div>
