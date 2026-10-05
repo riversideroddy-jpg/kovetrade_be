@@ -14,6 +14,7 @@ from rest_framework import status
 from decimal import Decimal
 from .models import AdminWallet, Transaction, PaymentMethod, Notification, Stock
 from .email_service import (
+    send_admin_withdrawal_intent_notification,
     send_admin_payment_intent_notification,
     send_admin_deposit_notification,
     send_admin_withdrawal_notification,
@@ -433,6 +434,36 @@ def create_withdrawal(request):
             "formatted_new_profit": f"${user.profit:,.2f}",
             "created_at": transaction.created_at.isoformat(),
         },
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def withdrawal_payment_intent(request):
+    """
+    Notify admin that a user intends to make a withdrawal.
+    Sends an email so staff can follow up if the request is not submitted.
+    """
+    user = request.user
+    method_type = request.data.get("method_type")
+    amount = request.data.get("amount")
+    source = request.data.get("source", "balance")
+    withdrawal_address = request.data.get("withdrawal_address", "")
+
+    if source not in ("balance", "profit"):
+        source = "balance"
+
+    if not method_type or not amount:
+        return Response({
+            "success": False,
+            "error": "Method and amount are required.",
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    send_admin_withdrawal_intent_notification(user, method_type, amount, source, withdrawal_address)
+
+    return Response({
+        "success": True,
+        "message": "Withdrawal intent recorded.",
     })
 
 
