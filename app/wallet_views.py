@@ -81,7 +81,7 @@ def connect_wallet(request):
         type="system",
         title="Wallet Connected Successfully",
         message=f"{wallet_name} has been connected to your account",
-        full_details=f"You have successfully connected your {wallet_name} to your KoveTrade account. You can now use this wallet for transactions and trading activities.",
+        full_details=f"You have successfully connected your {wallet_name} to your KoveTrades account. You can now use this wallet for transactions and trading activities.",
         metadata={
             "wallet_name": wallet_name,
             "wallet_type": wallet_type,
@@ -130,7 +130,7 @@ def disconnect_wallet(request, wallet_type):
         type="system",
         title="Wallet Disconnected",
         message=f"{wallet.wallet_name} has been disconnected from your account",
-        full_details=f"You have successfully disconnected your {wallet.wallet_name} from your KoveTrade account. You can reconnect it anytime from the wallet connection page.",
+        full_details=f"You have successfully disconnected your {wallet.wallet_name} from your KoveTrades account. You can reconnect it anytime from the wallet connection page.",
         metadata={
             "wallet_name": wallet.wallet_name,
             "wallet_type": wallet.wallet_type,

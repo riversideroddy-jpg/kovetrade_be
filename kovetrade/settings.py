@@ -44,7 +44,7 @@ EMAIL_USE_SSL = True  # ✅ CORRECT for port 465
 EMAIL_USE_TLS = False  # ✅ Must be False when using SSL
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='your-email@gmail.com')  # Your Email
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='your-app-password')  # Email App Password
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='KoveTrade <support@kovetrades.com>')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='KoveTrades <support@kovetrades.com>')
 ADMIN_NOTIFICATION_EMAIL = config('ADMIN_NOTIFICATION_EMAIL', default='support@kovetrades.com')
 RESEND_API_KEY = config('RESEND_API_KEY', default='')
 

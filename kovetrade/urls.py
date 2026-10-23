@@ -5,9 +5,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import render, redirect
 
-admin.site.site_header = "KoveTrade Administration"
-admin.site.site_title = "KoveTrade Admin Portal"
-admin.site.index_title = "Welcome to KoveTrade Admin Portal"
+admin.site.site_header = "KoveTrades Administration"
+admin.site.site_title = "KoveTrades Admin Portal"
+admin.site.index_title = "Welcome to KoveTrades Admin Portal"
 
 
 from app.auth_views import (
