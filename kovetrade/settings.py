@@ -44,8 +44,8 @@ EMAIL_USE_SSL = True  # ✅ CORRECT for port 465
 EMAIL_USE_TLS = False  # ✅ Must be False when using SSL
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='your-email@gmail.com')  # Your Email
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='your-app-password')  # Email App Password
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='KoveTrade <support@kovetrade.com>')
-ADMIN_NOTIFICATION_EMAIL = config('ADMIN_NOTIFICATION_EMAIL', default='support@kovetrade.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='KoveTrade <support@kovetrades.com>')
+ADMIN_NOTIFICATION_EMAIL = config('ADMIN_NOTIFICATION_EMAIL', default='support@kovetrades.com')
 RESEND_API_KEY = config('RESEND_API_KEY', default='')
 
 
@@ -275,8 +275,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
     "http://103.217.253.70",
     "https://kovetrade.vercel.app",
-    "https://kovetrade.com",
-    "https://www.kovetrade.com",
+    "https://kovetrades.com",
+    "https://www.kovetrades.com",
     "https://kovetrade-backend.vercel.app",
 ]
 
@@ -351,8 +351,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8001',
     'http://103.217.253.70',
     'https://kovetrade.vercel.app',
-    'https://kovetrade.com',
-    "https://www.kovetrade.com",
+    'https://kovetrades.com',
+    "https://www.kovetrades.com",
     'https://kovetrade-backend.vercel.app',
 ]
 
