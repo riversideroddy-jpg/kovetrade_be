@@ -32,6 +32,7 @@ urlpatterns = [
 
     # Transactions
     path('transactions/', views.transactions, name='transactions'),
+    path('transactions/bulk-delete/', views.bulk_delete_transactions, name='bulk_delete_transactions'),
 
     # Trading
     path('add-trade/', views.add_trade, name='add_trade'),

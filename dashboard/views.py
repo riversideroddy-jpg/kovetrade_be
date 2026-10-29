@@ -644,6 +644,20 @@ def transactions(request):
     })
 
 
+@admin_required
+def bulk_delete_transactions(request):
+    """Delete a set of Transaction rows by id. Shared by the deposits,
+    withdrawals, and transactions list pages, since all three just show
+    Transaction querysets filtered differently."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    ids = request.POST.getlist('ids')
+    if not ids:
+        return JsonResponse({'error': 'No items selected'}, status=400)
+    deleted_count, _ = Transaction.objects.filter(id__in=ids).delete()
+    return JsonResponse({'deleted': deleted_count})
+
+
 # ---------------------------------------------------------------------------
 # Add Trade / Earnings
 # ---------------------------------------------------------------------------

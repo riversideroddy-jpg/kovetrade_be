@@ -1,0 +1,116 @@
+{% csrf_token %}
+<div id="bulk-toolbar" class="hidden items-center justify-between bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 mb-4">
+    <p class="text-sm text-indigo-700 font-medium"><span id="bulk-count">0</span> {{ bulk_item_label }} selected</p>
+    <div class="flex gap-2">
+        <button type="button" id="bulk-clear-btn" class="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 transition">Clear selection</button>
+        <button type="button" id="bulk-delete-btn" class="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-500 transition disabled:opacity-50">
+            <i class="fas fa-trash text-[10px] mr-1"></i>Delete Selected
+        </button>
+    </div>
+</div>
+
+<script>
+(function () {
+    const STORAGE_KEY = '{{ bulk_storage_key|escapejs }}';
+    const DELETE_URL = '{{ bulk_delete_url|escapejs }}';
+    const ITEM_LABEL = '{{ bulk_item_label|escapejs }}';
+
+    function getSelected() {
+        try { return new Set(JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]')); }
+        catch (e) { return new Set(); }
+    }
+    function saveSelected(set) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const toolbar = document.getElementById('bulk-toolbar');
+        const countEl = document.getElementById('bulk-count');
+        const selectAll = document.getElementById('bulk-select-all');
+        const rowChecks = document.querySelectorAll('.bulk-row-check');
+        const deleteBtn = document.getElementById('bulk-delete-btn');
+        const clearBtn = document.getElementById('bulk-clear-btn');
+
+        function updateToolbar() {
+            const n = getSelected().size;
+            countEl.textContent = n;
+            toolbar.classList.toggle('hidden', n === 0);
+            toolbar.classList.toggle('flex', n > 0);
+        }
+        function updateSelectAllState() {
+            if (!selectAll || rowChecks.length === 0) return;
+            selectAll.checked = Array.from(rowChecks).every(function (cb) { return cb.checked; });
+        }
+
+        // Restore checked state for rows on this page from the stored
+        // cross-page selection.
+        const selected = getSelected();
+        rowChecks.forEach(function (cb) {
+            cb.checked = selected.has(cb.value);
+            cb.addEventListener('change', function () {
+                const sel = getSelected();
+                if (cb.checked) sel.add(cb.value); else sel.delete(cb.value);
+                saveSelected(sel);
+                updateToolbar();
+                updateSelectAllState();
+            });
+        });
+        updateToolbar();
+        updateSelectAllState();
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                const sel = getSelected();
+                rowChecks.forEach(function (cb) {
+                    cb.checked = selectAll.checked;
+                    if (selectAll.checked) sel.add(cb.value); else sel.delete(cb.value);
+                });
+                saveSelected(sel);
+                updateToolbar();
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                sessionStorage.removeItem(STORAGE_KEY);
+                rowChecks.forEach(function (cb) { cb.checked = false; });
+                if (selectAll) selectAll.checked = false;
+                updateToolbar();
+            });
+        }
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function () {
+                const sel = getSelected();
+                if (sel.size === 0) return;
+                if (!confirm('Delete ' + sel.size + ' ' + ITEM_LABEL + '? This cannot be undone.')) return;
+
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = 'Deleting…';
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const formData = new FormData();
+                sel.forEach(function (id) { formData.append('ids', id); });
+
+                fetch(DELETE_URL, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken },
+                    body: formData,
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('Request failed');
+                    return res.json();
+                })
+                .then(function () {
+                    sessionStorage.removeItem(STORAGE_KEY);
+                    window.location.reload();
+                })
+                .catch(function () {
+                    alert('Failed to delete selected items. Please try again.');
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '<i class="fas fa-trash text-[10px] mr-1"></i>Delete Selected';
+                });
+            });
+        }
+    });
+})();
+</script>
